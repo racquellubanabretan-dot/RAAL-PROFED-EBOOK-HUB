@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAAL Professional Education eBook Hub</title>
+<style>
+  :root{
+    --ink:#172033;
+    --muted:#667085;
+    --line:#e6e8ec;
+    --panel:#ffffff;
+    --bg:#f5f7fb;
+    --accent:#1769e0;
+    --accent-dark:#0f4fae;
+    --success:#14804a;
+    --danger:#c62828;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:linear-gradient(145deg,#eef4ff 0%,#f8f9fc 52%,#eef7f2 100%);
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .shell{width:min(760px,100%)}
+  .card{
+    background:rgba(255,255,255,.96);
+    border:1px solid rgba(230,232,236,.9);
+    border-radius:24px;
+    box-shadow:0 20px 60px rgba(23,32,51,.12);
+    overflow:hidden;
+  }
+  .hero{
+    padding:42px 34px 30px;
+    text-align:center;
+    background:linear-gradient(135deg,#0f4fae,#1769e0);
+    color:white;
+  }
+  .brand{
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    font-weight:800;
+    letter-spacing:.08em;
+    font-size:.78rem;
+    opacity:.92;
+    margin-bottom:18px;
+  }
+  .brand-dot{
+    width:10px;height:10px;border-radius:50%;background:#fff;
+  }
+  h1{margin:0;font-size:clamp(1.7rem,5vw,2.5rem);line-height:1.1}
+  .tagline{margin:12px 0 0;font-weight:700;letter-spacing:.12em;font-size:.8rem;opacity:.9}
+  .content{padding:34px}
+  .intro{text-align:center;color:var(--muted);line-height:1.6;margin:0 auto 28px;max-width:560px}
+  label{display:block;font-weight:700;margin-bottom:9px}
+  .input-row{display:flex;gap:10px}
+  input{
+    flex:1;min-width:0;
+    height:54px;padding:0 16px;
+    border:1px solid #cfd5df;border-radius:12px;
+    font-size:1rem;letter-spacing:.06em;text-transform:uppercase;
+    outline:none;
+  }
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(23,105,224,.12)}
+  button{
+    border:0;border-radius:12px;padding:0 22px;
+    min-height:54px;background:var(--accent);color:white;
+    font-weight:800;font-size:.98rem;cursor:pointer;
+    transition:.15s ease;
+  }
+  button:hover{background:var(--accent-dark)}
+  button:disabled{opacity:.6;cursor:wait}
+  .message{display:none;margin-top:16px;padding:13px 15px;border-radius:12px;font-size:.94rem;line-height:1.45}
+  .message.error{display:block;background:#fff1f1;color:var(--danger);border:1px solid #ffd2d2}
+  .message.success{display:block;background:#edf9f2;color:var(--success);border:1px solid #c7ead5}
+  .features{
+    margin-top:30px;padding-top:25px;border-top:1px solid var(--line);
+    display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  }
+  .feature{padding:15px;border:1px solid var(--line);border-radius:14px;text-align:center}
+  .feature strong{display:block;font-size:.9rem;margin-bottom:4px}
+  .feature span{color:var(--muted);font-size:.78rem}
+  .footer{text-align:center;color:#8a93a3;font-size:.75rem;margin-top:18px}
+  .reader{display:none;padding:34px;text-align:center}
+  .reader h2{margin-top:0}
+  .reader p{color:var(--muted);line-height:1.6}
+  .open-btn{display:inline-flex;align-items:center;justify-content:center;text-decoration:none;margin-top:8px}
+  .note{font-size:.78rem;color:#8a93a3;margin-top:16px}
+  @media(max-width:620px){
+    .content,.hero{padding:28px 22px}
+    .input-row{flex-direction:column}
+    button{width:100%}
+    .features{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<main class="shell">
+  <section class="card">
+    <header class="hero">
+      <div class="brand"><span class="brand-dot"></span> RAAL EDUCATIONAL RESOURCES</div>
+      <h1>RAAL Professional Education<br>Visual Study Guide</h1>
+      <div class="tagline">BETTER PREPARED TEACHERS</div>
+    </header>
+
+    <section id="accessPanel" class="content">
+      <p class="intro">
+        Enter the personalized access code provided with your purchase to securely open your
+        Professional Education Visual Study Guide.
+      </p>
+
+      <form id="accessForm">
+        <label for="accessCode">Access Code</label>
+        <div class="input-row">
+          <input id="accessCode" name="accessCode" type="text"
+                 placeholder="RAAL-PE-XXXX-XXXX"
+                 autocomplete="off" spellcheck="false" required>
+          <button id="accessButton" type="submit">ACCESS EBOOK</button>
+        </div>
+      </form>
+
+      <div id="message" class="message" role="alert"></div>
+
+      <div class="features">
+        <div class="feature"><strong>Secure</strong><span>Private ebook storage</span></div>
+        <div class="feature"><strong>Protected</strong><span>Access-code validation</span></div>
+        <div class="feature"><strong>Temporary</strong><span>Time-limited ebook link</span></div>
+      </div>
+    </section>
+
+    <section id="readerPanel" class="reader">
+      <h2 id="readerTitle">Access Granted</h2>
+      <p>Your access code has been validated. Click below to open your ebook.</p>
+      <a id="openEbook" class="open-btn" target="_blank" rel="noopener noreferrer">
+        <button type="button">OPEN EBOOK</button>
+      </a>
+      <div class="note">Your secure ebook link is temporary. If it expires, return here and enter your access code again.</div>
+    </section>
+  </section>
+  <div class="footer">© 2026 RAAL Educational Resources. All rights reserved.</div>
+</main>
+
+<script>
+  // ============================================================
+  // RAAL eBook Hub configuration
+  // Replace ONLY the value below with your Supabase PUBLISHABLE KEY.
+  // Never put a Supabase SECRET key or service-role key here.
+  // ============================================================
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_x1DuFhkCaqT6Wo9GEAA6RA_ilwsYpVp";
+
+  const FUNCTION_URL =
+    "https://qsmbdygmmrqeldttrqpv.supabase.co/functions/v1/validate-ebook-access";
+
+  const form = document.getElementById("accessForm");
+  const input = document.getElementById("accessCode");
+  const button = document.getElementById("accessButton");
+  const message = document.getElementById("message");
+  const accessPanel = document.getElementById("accessPanel");
+  const readerPanel = document.getElementById("readerPanel");
+  const readerTitle = document.getElementById("readerTitle");
+  const openEbook = document.getElementById("openEbook");
+
+  function showMessage(text, type) {
+    message.textContent = text;
+    message.className = "message " + type;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const code = input.value.trim().toUpperCase();
+
+    if (!code) {
+      showMessage("Please enter your access code.", "error");
+      return;
+    }
+
+    if (SUPABASE_PUBLISHABLE_KEY === "PASTE_YOUR_PUBLISHABLE_KEY_HERE") {
+      showMessage("The ebook hub still needs its Supabase publishable key configured.", "error");
+      return;
+    }
+
+    button.disabled = true;
+    button.textContent = "VALIDATING...";
+    message.className = "message";
+    message.textContent = "";
+
+    try {
+      const response = await fetch(FUNCTION_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_PUBLISHABLE_KEY,
+          "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({ code })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        showMessage(data.message || "Unable to validate the access code.", "error");
+        return;
+      }
+
+      readerTitle.textContent = data.product_name || "Access Granted";
+      openEbook.href = data.ebook_url;
+      accessPanel.style.display = "none";
+      readerPanel.style.display = "block";
+
+    } catch (error) {
+      console.error(error);
+      showMessage("Unable to connect to the ebook access service. Please try again.", "error");
+    } finally {
+      button.disabled = false;
+      button.textContent = "ACCESS EBOOK";
+    }
+  });
+</script>
+</body>
+</html>
