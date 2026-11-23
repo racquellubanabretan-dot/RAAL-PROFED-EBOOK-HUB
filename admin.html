@@ -62,7 +62,12 @@
         body: JSON.stringify({})
       });
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(`Admin API returned HTTP ${response.status} with an unreadable response.`);
+      }
 
       if (!response.ok || !result.success) {
         throw new Error(
@@ -83,6 +88,9 @@ async function displayDashboard(session) {
   roleDisplay.textContent = result.role.toUpperCase();
 
   const stats = result.dashboard_statistics;
+  if (!stats || !Array.isArray(result.product_statistics)) {
+    throw new Error("The admin API response is missing dashboard statistics.");
+  }
 
   const values = {
     totalCustomers: stats.total_customers,
@@ -97,8 +105,10 @@ async function displayDashboard(session) {
   };
 
   Object.entries(values).forEach(([id, value]) => {
-    document.getElementById(id).textContent =
-      Number(value).toLocaleString();
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = Number(value ?? 0).toLocaleString();
+    }
   });
 
   const productContainer =
@@ -189,7 +199,10 @@ document.getElementById("refreshButton").addEventListener(
     try {
       await displayDashboard(data.session);
     } catch (error) {
-      showMessage(error.message);
+      const dashboardMessage = document.getElementById("dashboardMessage");
+      dashboardMessage.textContent = error.message;
+      dashboardMessage.className = "message error";
+      dashboardMessage.style.display = "block";
     } finally {
       button.disabled = false;
       button.textContent = "REFRESH STATISTICS";
@@ -213,79 +226,6 @@ document.getElementById("refreshButton").addEventListener(
 
     restoreSession();
   </script>
-
-.dashboard-panel {
-  max-width: 850px;
-  width: 100%;
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 18px 0 28px;
-}
-
-.stat-card {
-  background: #f1f5fa;
-  border: 1px solid #e0e7f0;
-  border-radius: 9px;
-  padding: 16px;
-}
-
-.stat-card span {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-}
-
-.stat-card strong {
-  display: block;
-  margin-top: 8px;
-  font-size: 27px;
-  color: #173b69;
-}
-
-.product-list {
-  display: grid;
-  gap: 12px;
-  margin: 15px 0;
-}
-
-.product-card {
-  border: 1px solid #dce4ef;
-  border-radius: 9px;
-  padding: 17px;
-}
-
-.product-card h4 {
-  color: #173b69;
-  margin: 0 0 12px;
-}
-
-.product-card p {
-  margin: 6px 0;
-  font-size: 13px;
-}
-
-.dashboard-panel h3 {
-  margin-top: 26px;
-  color: #173b69;
-}
-
-@media (max-width: 600px) {
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 
   <style>
     * {
@@ -430,6 +370,95 @@ document.getElementById("refreshButton").addEventListener(
     #dashboardPanel {
       display: none;
     }
+
+.dashboard-panel {
+  max-width: 850px;
+  width: 100%;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 28px;
+}
+
+.stat-card {
+  background: #f1f5fa;
+  border: 1px solid #e0e7f0;
+  border-radius: 9px;
+  padding: 16px;
+}
+
+.stat-card span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 27px;
+  color: #173b69;
+}
+
+.product-list {
+  display: grid;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.product-card {
+  border: 1px solid #dce4ef;
+  border-radius: 9px;
+  padding: 17px;
+}
+
+.product-card h4 {
+  color: #173b69;
+  margin: 0 0 12px;
+}
+
+.product-card p {
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.dashboard-panel h3 {
+  margin-top: 26px;
+  color: #173b69;
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+    .container {
+      max-width: 1000px;
+    }
+
+    #loginPanel {
+      max-width: 440px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 600px) {
+      .dashboard-panel {
+        padding: 22px;
+      }
+    }
   </style>
 </head>
 
@@ -556,26 +585,6 @@ document.getElementById("refreshButton").addEventListener(
 
 </section>
 
-      <h2>Welcome, Administrator!</h2>
-
-      <p class="subtitle">
-        Your identity has been verified by Supabase.
-      </p>
-
-      <p>Account authorization:</p>
-
-      <div class="role" id="roleDisplay">
-        SUPER_ADMIN
-      </div>
-
-      <p class="subtitle">
-        Your secure RAAL administration session is active.
-      </p>
-
-      <button id="logoutButton">
-        SIGN OUT
-      </button>
-    </section>
 
     <footer class="footer">
       © 2026 RAAL Educational Resources. All rights reserved.
@@ -587,4 +596,3 @@ document.getElementById("refreshButton").addEventListener(
 
 </body>
 </html>
-
