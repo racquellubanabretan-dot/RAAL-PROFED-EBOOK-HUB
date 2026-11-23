@@ -540,7 +540,7 @@ function createAccessCodeText(tag, text) {
 async function loadAccessCodes() {
   const list = document.getElementById("accessCodeList");
   const search = document.getElementById("accessCodeSearch").value.trim();
-  const status = document.getElementById("accessCodesStatus").value;
+ const status = document.getElementById("accessCodeStatus").value;
 
   list.replaceChildren(
     createAccessCodeText("p", "Loading access codes...")
@@ -665,7 +665,7 @@ document.getElementById("accessCodeSearch")
   });
 
 // Status filter
-document.getElementById("accessCodesStatus")
+document.getElementById("accessCodeStatus")
   .addEventListener("change", () => {
     accessCodeOffset = 0;
     loadAccessCodes();
