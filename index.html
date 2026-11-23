@@ -193,15 +193,34 @@ RAAL Professional Education eBook.
     message.textContent = "";
 
     try {
-      const response = await fetch(FUNCTION_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_PUBLISHABLE_KEY,
-          "Authorization": "Bearer " + SUPABASE_PUBLISHABLE_KEY
-        },
-        body: JSON.stringify({ code })
-      });
+      // Get or create a persistent device identifier
+let deviceToken = localStorage.getItem("raal_device_token");
+
+if (!deviceToken || !/^[a-f0-9]{64}$/.test(deviceToken)) {
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+
+  deviceToken = Array.from(
+    randomBytes,
+    byte => byte.toString(16).padStart(2, "0")
+  ).join("");
+
+  localStorage.setItem("raal_device_token", deviceToken);
+}
+
+// Send access code and device identifier to Supabase
+const response = await fetch(FUNCTION_URL, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "apikey": SUPABASE_PUBLISHABLE_KEY
+  },
+  body: JSON.stringify({
+    code: code,
+    device_token: deviceToken,
+    device_label: "Web browser"
+  })
+});
 
       const data = await response.json();
 
