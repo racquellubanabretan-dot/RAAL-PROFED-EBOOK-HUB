@@ -540,7 +540,7 @@ function createAccessCodeText(tag, text) {
 async function loadAccessCodes() {
   const list = document.getElementById("accessCodeList");
   const search = document.getElementById("accessCodeSearch").value.trim();
- const status = document.getElementById("accessCodeStatus").value;
+ const status = document.getElementById("accessCodesStatus").value;
 
   list.replaceChildren(
     createAccessCodeText("p", "Loading access codes...")
@@ -665,7 +665,7 @@ document.getElementById("accessCodeSearch")
   });
 
 // Status filter
-document.getElementById("accessCodeStatus")
+document.getElementById("accessCodesStatus")
   .addEventListener("change", () => {
     accessCodeOffset = 0;
     loadAccessCodes();
@@ -1264,7 +1264,7 @@ document.getElementById("nextAccessCodesButton")
       maxlength="120"
     >
 
-    <select id="accessCodeStatus">
+    <select id="accessCodesStatus">
       <option value="all">All Statuses</option>
       <option value="active">Active</option>
       <option value="inactive">Inactive</option>
