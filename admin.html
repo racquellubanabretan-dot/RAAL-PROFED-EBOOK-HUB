@@ -73,18 +73,70 @@
       return result;
     }
 
-    async function displayDashboard(session) {
-      const result = await verifyAdministrator(session);
+   
+async function displayDashboard(session) {
+  const result = await verifyAdministrator(session);
 
-      loginPanel.style.display = "none";
-      dashboardPanel.style.display = "block";
+  loginPanel.style.display = "none";
+  dashboardPanel.style.display = "block";
 
-      roleDisplay.textContent = result.role.toUpperCase();
+  roleDisplay.textContent = result.role.toUpperCase();
 
-      showMessage(
-        "Administrator authentication successful.",
-        "success"
-      );
+  const stats = result.dashboard_statistics;
+
+  const values = {
+    totalCustomers: stats.total_customers,
+    activeProducts: stats.active_products,
+    totalCodes: stats.total_access_codes,
+    activeCodes: stats.active_access_codes,
+    inactiveCodes: stats.inactive_access_codes,
+    expiredCodes: stats.expired_active_codes,
+    totalDevices: stats.total_registered_devices,
+    activeDevices: stats.active_registered_devices,
+    totalLogs: stats.total_access_logs
+  };
+
+  Object.entries(values).forEach(([id, value]) => {
+    document.getElementById(id).textContent =
+      Number(value).toLocaleString();
+  });
+
+  const productContainer =
+    document.getElementById("productStatistics");
+
+  productContainer.replaceChildren();
+
+  result.product_statistics.forEach(product => {
+    const card = document.createElement("div");
+    card.className = "product-card";
+
+    const title = document.createElement("h4");
+    title.textContent = product.product_name;
+
+    const total = document.createElement("p");
+    total.textContent = `Total codes: ${product.total_codes}`;
+
+    const active = document.createElement("p");
+    active.textContent = `Active codes: ${product.active_codes}`;
+
+    const inactive = document.createElement("p");
+    inactive.textContent = `Inactive codes: ${product.inactive_codes}`;
+
+    const status = document.createElement("p");
+    status.textContent = product.is_active
+      ? "Product status: Active"
+      : "Product status: Inactive";
+
+    card.append(title, total, active, inactive, status);
+    productContainer.appendChild(card);
+  });
+
+  document.getElementById("dashboardMessage").textContent =
+    "Dashboard statistics successfully updated.";
+
+  document.getElementById("dashboardMessage").className =
+    "message success";
+
     }
 
     loginForm.addEventListener("submit", async (event) => {
@@ -120,6 +172,31 @@
       showMessage("You have signed out.", "success");
     });
 
+document.getElementById("refreshButton").addEventListener(
+  "click",
+  async () => {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error || !data.session) {
+      showMessage("Your session has expired. Please sign in again.");
+      return;
+    }
+
+    const button = document.getElementById("refreshButton");
+    button.disabled = true;
+    button.textContent = "REFRESHING...";
+
+    try {
+      await displayDashboard(data.session);
+    } catch (error) {
+      showMessage(error.message);
+    } finally {
+      button.disabled = false;
+      button.textContent = "REFRESH STATISTICS";
+    }
+  }
+);
+
     // Restore an existing session and verify it again.
     async function restoreSession() {
       const { data } = await supabase.auth.getSession();
@@ -136,6 +213,79 @@
 
     restoreSession();
   </script>
+
+.dashboard-panel {
+  max-width: 850px;
+  width: 100%;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0 28px;
+}
+
+.stat-card {
+  background: #f1f5fa;
+  border: 1px solid #e0e7f0;
+  border-radius: 9px;
+  padding: 16px;
+}
+
+.stat-card span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.stat-card strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 27px;
+  color: #173b69;
+}
+
+.product-list {
+  display: grid;
+  gap: 12px;
+  margin: 15px 0;
+}
+
+.product-card {
+  border: 1px solid #dce4ef;
+  border-radius: 9px;
+  padding: 17px;
+}
+
+.product-card h4 {
+  color: #173b69;
+  margin: 0 0 12px;
+}
+
+.product-card p {
+  margin: 6px 0;
+  font-size: 13px;
+}
+
+.dashboard-panel h3 {
+  margin-top: 26px;
+  color: #173b69;
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
   <style>
     * {
@@ -328,7 +478,84 @@
       <div id="message" class="message"></div>
     </section>
 
-    <section class="panel" id="dashboardPanel">
+   
+<section class="panel dashboard-panel" id="dashboardPanel">
+
+  <div class="dashboard-header">
+    <div>
+      <h2>RAAL Admin Dashboard</h2>
+      <p class="subtitle">Digital Products Administration</p>
+    </div>
+    <div class="role" id="roleDisplay">SUPER_ADMIN</div>
+  </div>
+
+  <div id="dashboardMessage" class="message"></div>
+
+  <h3>Overview</h3>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span>Total Customers</span>
+      <strong id="totalCustomers">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Active Products</span>
+      <strong id="activeProducts">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Total Access Codes</span>
+      <strong id="totalCodes">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Active Access Codes</span>
+      <strong id="activeCodes">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Inactive Codes</span>
+      <strong id="inactiveCodes">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Expired Active Codes</span>
+      <strong id="expiredCodes">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Registered Devices</span>
+      <strong id="totalDevices">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Active Devices</span>
+      <strong id="activeDevices">—</strong>
+    </div>
+
+    <div class="stat-card">
+      <span>Access Logs</span>
+      <strong id="totalLogs">—</strong>
+    </div>
+  </div>
+
+  <h3>Product Performance</h3>
+
+  <div id="productStatistics" class="product-list">
+    <p>Loading product statistics...</p>
+  </div>
+
+  <button id="refreshButton" type="button">
+    REFRESH STATISTICS
+  </button>
+
+  <button id="logoutButton" type="button">
+    SIGN OUT
+  </button>
+
+</section>
+
       <h2>Welcome, Administrator!</h2>
 
       <p class="subtitle">
