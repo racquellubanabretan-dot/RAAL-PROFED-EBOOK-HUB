@@ -517,6 +517,181 @@ displayDashboard = async function(session) {
 // END CUSTOMER MANAGEMENT
 // ==========================================
 
+    
+// ==========================================
+// ACCESS CODE MANAGEMENT
+// ==========================================
+
+let accessCodeOffset = 0;
+const ACCESS_CODE_PAGE_SIZE = 25;
+
+function showAccessCodeMessage(text, type = "success") {
+  const element = document.getElementById("accessCodeMessage");
+  element.textContent = text;
+  element.className = "message " + type;
+}
+
+function createAccessCodeText(tag, text) {
+  const element = document.createElement(tag);
+  element.textContent = text ?? "";
+  return element;
+}
+
+async function loadAccessCodes() {
+  const list = document.getElementById("accessCodeList");
+  const search = document.getElementById("accessCodeSearch").value.trim();
+  const status = document.getElementById("accessCodesStatus").value;
+
+  list.replaceChildren(
+    createAccessCodeText("p", "Loading access codes...")
+  );
+
+  try {
+    const result = await callAdminApi("list_access_codes", {
+      search,
+      status,
+      limit: ACCESS_CODE_PAGE_SIZE,
+      offset: accessCodeOffset
+    });
+
+    list.replaceChildren();
+
+    const codes = result.access_codes || [];
+    const pagination = result.pagination || {};
+
+    if (codes.length === 0) {
+      list.appendChild(
+        createAccessCodeText("p", "No access codes found.")
+      );
+    }
+
+    codes.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "customer-card";
+
+      const code = createAccessCodeText("h4", item.code);
+      card.appendChild(code);
+
+      const productName =
+        item.product?.product_name ||
+        item.product?.product_code ||
+        "Product not identified";
+
+      const customerName =
+        item.customer?.customer_name ||
+        "Unassigned / placeholder code";
+
+      card.appendChild(
+        createAccessCodeText("p", "Product: " + productName)
+      );
+
+      card.appendChild(
+        createAccessCodeText("p", "Customer: " + customerName)
+      );
+
+      card.appendChild(
+        createAccessCodeText(
+          "p",
+          "Status: " + (item.is_active ? "Active" : "Inactive")
+        )
+      );
+
+      card.appendChild(
+        createAccessCodeText(
+          "p",
+          "Activated: " +
+            (item.activated_at
+              ? new Date(item.activated_at).toLocaleString()
+              : "Not yet activated")
+        )
+      );
+
+      card.appendChild(
+        createAccessCodeText(
+          "p",
+          "Expires: " +
+            (item.expires_at
+              ? new Date(item.expires_at).toLocaleDateString()
+              : "Lifetime access")
+        )
+      );
+
+      list.appendChild(card);
+    });
+
+    const total = pagination.total ?? codes.length;
+    const currentPage =
+      Math.floor(accessCodeOffset / ACCESS_CODE_PAGE_SIZE) + 1;
+    const totalPages = Math.max(
+      1,
+      Math.ceil(total / ACCESS_CODE_PAGE_SIZE)
+    );
+
+    document.getElementById("accessCodePageInfo").textContent =
+      "Page " + currentPage + " of " + totalPages +
+      " — " + total + " access codes";
+
+    document.getElementById("previousAccessCodesButton").disabled =
+      accessCodeOffset === 0;
+
+    document.getElementById("nextAccessCodesButton").disabled =
+      accessCodeOffset + ACCESS_CODE_PAGE_SIZE >= total;
+
+    showAccessCodeMessage("Access code directory updated successfully.");
+
+  } catch (error) {
+    list.replaceChildren();
+    list.appendChild(
+      createAccessCodeText("p", "Unable to load access codes.")
+    );
+    showAccessCodeMessage(error.message, "error");
+  }
+}
+
+// Search button
+document.getElementById("searchAccessCodesButton")
+  .addEventListener("click", () => {
+    accessCodeOffset = 0;
+    loadAccessCodes();
+  });
+
+// Search when Enter is pressed
+document.getElementById("accessCodeSearch")
+  .addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      accessCodeOffset = 0;
+      loadAccessCodes();
+    }
+  });
+
+// Status filter
+document.getElementById("accessCodesStatus")
+  .addEventListener("change", () => {
+    accessCodeOffset = 0;
+    loadAccessCodes();
+  });
+
+// Previous page
+document.getElementById("previousAccessCodesButton")
+  .addEventListener("click", () => {
+    accessCodeOffset = Math.max(
+      0,
+      accessCodeOffset - ACCESS_CODE_PAGE_SIZE
+    );
+    loadAccessCodes();
+  });
+
+// Next page
+document.getElementById("nextAccessCodesButton")
+  .addEventListener("click", () => {
+    accessCodeOffset += ACCESS_CODE_PAGE_SIZE;
+    loadAccessCodes();
+  });
+
+// ==========================================
+// END ACCESS CODE MANAGEMENT
+// ==========================================
+
     restoreSession();
   </script>
 
