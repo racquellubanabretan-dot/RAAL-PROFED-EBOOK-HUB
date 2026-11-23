@@ -343,6 +343,66 @@ async function loadCustomers(offset = 0) {
         createCustomerText("p", "Products: " + (productNames || "None listed"))
       );
 
+      
+// Assign an existing access code to this customer.
+const allocationSection = document.createElement("div");
+allocationSection.style.marginTop = "12px";
+
+const productSelect = document.createElement("select");
+productSelect.style.width = "100%";
+productSelect.style.padding = "10px";
+productSelect.style.marginBottom = "8px";
+
+const defaultOption = document.createElement("option");
+defaultOption.value = "";
+defaultOption.textContent = "Select an eBook product";
+productSelect.appendChild(defaultOption);
+
+(result.available_products || []).forEach((product) => {
+    const option = document.createElement("option");
+    option.value = product.id;
+    option.textContent = product.product_name;
+    productSelect.appendChild(option);
+});
+
+const assignButton = document.createElement("button");
+assignButton.type = "button";
+assignButton.textContent = "ASSIGN EXISTING ACCESS CODE";
+assignButton.style.width = "100%";
+
+assignButton.addEventListener("click", async () => {
+    if (!productSelect.value) {
+        showCustomerMessage("Please select an eBook product.", "error");
+        return;
+    }
+
+    assignButton.disabled = true;
+    assignButton.textContent = "ASSIGNING...";
+
+    try {
+        const allocation = await callAdminApi("issue_access_code", {
+            customer_id: customer.id,
+            product_id: productSelect.value
+        });
+
+        showCustomerMessage(
+            "Access code assigned successfully: " + allocation.access_code,
+            "success"
+        );
+
+        await loadCustomers();
+    } catch (error) {
+        showCustomerMessage(error.message, "error");
+    } finally {
+        assignButton.disabled = false;
+        assignButton.textContent = "ASSIGN EXISTING ACCESS CODE";
+    }
+});
+
+allocationSection.appendChild(productSelect);
+allocationSection.appendChild(assignButton);
+card.appendChild(allocationSection);
+
       customerList.appendChild(card);
     });
 
