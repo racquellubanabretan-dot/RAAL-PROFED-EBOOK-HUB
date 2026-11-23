@@ -1073,7 +1073,55 @@ displayDashboard = async function(session) {
 </section>
 <!-- END CUSTOMER MANAGEMENT -->
 
+<!-- ACCESS CODE MANAGEMENT -->
+<section class="customer-section" id="accessCodeManagement">
+  <h3>Access Code Management</h3>
+
+  <p class="subtitle">
+    Search, review, and manage issued eBook access codes.
+  </p>
+
+  <div class="search-container">
+    <input
+      type="text"
+      id="accessCodeSearch"
+      placeholder="Search access code..."
+      maxlength="120"
+    >
+
+    <select id="accessCodeStatus">
+      <option value="all">All Statuses</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+
+    <button type="button" id="searchAccessCodesButton">
+      SEARCH
+    </button>
+  </div>
+
+  <div id="accessCodeMessage" class="message"></div>
+
+  <div id="accessCodeList">
+    <p>Access codes will appear here.</p>
+  </div>
+
+  <div class="customer-pagination">
+    <button type="button" id="previousAccessCodesButton">
+      PREVIOUS
+    </button>
+
+    <span id="accessCodePageInfo">Page 1</span>
+
+    <button type="button" id="nextAccessCodesButton">
+      NEXT
+    </button>
+  </div>
+</section>
+<!-- END ACCESS CODE MANAGEMENT -->
+
   <button id="refreshButton" type="button">
+    
     REFRESH STATISTICS
   </button>
 
