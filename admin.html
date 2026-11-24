@@ -715,11 +715,12 @@ async function loadDevices() {
   message.textContent = "";
 
   try {
-    const result = await callAdminApi("list_devices", {
-      limit: DEVICE_PAGE_SIZE,
-      offset: deviceOffset
-    });
-
+   const result = await callAdminApi("list_devices", {
+  limit: DEVICE_PAGE_SIZE,
+  offset: deviceOffset,
+  search: document.getElementById("deviceSearch").value.trim(),
+  status: document.getElementById("deviceStatus").value
+});
     allDeviceRecords = result.devices || [];
     deviceTotal = result.pagination?.total || 0;
 
@@ -863,10 +864,16 @@ document.getElementById("refreshDevicesButton")
   .addEventListener("click", () => loadDevices());
 
 document.getElementById("deviceSearch")
-  .addEventListener("input", () => renderDevices());
+  .addEventListener("input", () => {
+    deviceOffset = 0;
+    loadDevices();
+  });
 
 document.getElementById("deviceStatus")
-  .addEventListener("change", () => renderDevices());
+  .addEventListener("change", () => {
+    deviceOffset = 0;
+    loadDevices();
+  });
 
 document.getElementById("previousDevicesButton")
   .addEventListener("click", () => {
