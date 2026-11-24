@@ -143,11 +143,11 @@ async function displayDashboard(session) {
 
   document.getElementById("dashboardMessage").textContent =
     "Dashboard statistics successfully updated.";
-
-  document.getElementById("dashboardMessage").className =
+document.getElementById("dashboardMessage").className =
     "message success";
 
-    }
+  await loadDevices();
+}
 
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
@@ -214,10 +214,10 @@ document.getElementById("refreshButton").addEventListener(
     async function restoreSession() {
       const { data } = await supabase.auth.getSession();
 
-      if (data.session) {
-        try {
-          await displayDashboard(data.session);
-        } catch (error) {
+     if (data.session) {
+  try {
+    await displayDashboard(data.session);
+    } catch (error) {
           await supabase.auth.signOut();
           showMessage(error.message);
         }
@@ -692,6 +692,196 @@ document.getElementById("nextAccessCodesButton")
 // END ACCESS CODE MANAGEMENT
 // ==========================================
 
+   
+// ========================================
+// DEVICE MANAGEMENT
+// ========================================
+
+const DEVICE_PAGE_SIZE = 25;
+let deviceOffset = 0;
+let deviceTotal = 0;
+let allDeviceRecords = [];
+let deviceStatistics = {
+  total: 0,
+  active: 0,
+  revoked: 0
+};
+
+async function loadDevices() {
+  const list = document.getElementById("deviceList");
+  const message = document.getElementById("deviceMessage");
+
+  list.innerHTML = "<p>Loading device records...</p>";
+  message.textContent = "";
+
+  try {
+    const result = await callAdminApi("list_devices", {
+      limit: DEVICE_PAGE_SIZE,
+      offset: deviceOffset
+    });
+
+    allDeviceRecords = result.devices || [];
+    deviceTotal = result.pagination?.total || 0;
+
+    deviceStatistics = result.statistics || {
+      total: 0,
+      active: 0,
+      revoked: 0
+    };
+
+    renderDevices();
+    updateDeviceStatistics();
+
+  } catch (error) {
+    list.innerHTML = "<p>Unable to load device records.</p>";
+    message.textContent = error.message;
+  }
+}
+
+function updateDeviceStatistics() {
+  document.getElementById("totalRegisteredDevices").textContent =
+    deviceStatistics.total;
+
+  document.getElementById("activeRegisteredDevices").textContent =
+    deviceStatistics.active;
+
+  document.getElementById("revokedRegisteredDevices").textContent =
+    deviceStatistics.revoked;
+}
+
+function renderDevices() {
+  const list = document.getElementById("deviceList");
+  const search = document.getElementById("deviceSearch")
+    .value.trim().toLowerCase();
+  const status = document.getElementById("deviceStatus").value;
+
+  const filteredDevices = allDeviceRecords.filter(device => {
+    const code = device.access_code?.code || "";
+    const customer = device.customer?.customer_name || "";
+    const product = device.product?.product_name || "";
+    const label = device.device_label || "";
+
+    const matchesSearch = [
+      code, customer, product, label, device.id
+    ].some(value => String(value).toLowerCase().includes(search));
+
+    const isRevoked = Boolean(device.revoked_at);
+
+    const matchesStatus =
+      status === "all" ||
+      (status === "active" && !isRevoked) ||
+      (status === "revoked" && isRevoked);
+
+    return matchesSearch && matchesStatus;
+  });
+
+  if (!filteredDevices.length) {
+    list.innerHTML = "<p>No matching device records found.</p>";
+  } else {
+    list.innerHTML = filteredDevices.map(device => {
+      const revoked = Boolean(device.revoked_at);
+      const customer = device.customer?.customer_name || "Unassigned";
+      const code = device.access_code?.code || "Unknown";
+      const product = device.product?.product_name || "Unknown";
+
+      return `
+        <div class="device-card" style="border:1px solid #ddd; padding:16px; margin:12px 0; border-radius:8px;">
+          <h4>${escapeDeviceHtml(device.device_label || "Unnamed device")}</h4>
+          <p><strong>Device ID:</strong> ${escapeDeviceHtml(device.id)}</p>
+          <p><strong>Access Code:</strong> ${escapeDeviceHtml(code)}</p>
+          <p><strong>Product:</strong> ${escapeDeviceHtml(product)}</p>
+          <p><strong>Customer:</strong> ${escapeDeviceHtml(customer)}</p>
+          <p><strong>First Seen:</strong> ${formatDeviceDate(device.first_seen_at)}</p>
+          <p><strong>Last Seen:</strong> ${formatDeviceDate(device.last_seen_at)}</p>
+          <p><strong>Status:</strong> ${revoked ? "Revoked" : "Active"}</p>
+          ${
+            revoked
+              ? ""
+               : `<button type="button" onclick="window.revokeDevice('${escapeDeviceHtml(device.id)}')">Revoke Device</button>`
+          }
+        </div>
+      `;
+    }).join("");
+  }
+
+  const currentPage = Math.floor(deviceOffset / DEVICE_PAGE_SIZE) + 1;
+  const totalPages = Math.max(1, Math.ceil(deviceTotal / DEVICE_PAGE_SIZE));
+
+  document.getElementById("devicePageInfo").textContent =
+    `Page ${currentPage} of ${totalPages}`;
+
+  document.getElementById("previousDevicesButton").disabled =
+    deviceOffset === 0;
+
+  document.getElementById("nextDevicesButton").disabled =
+    deviceOffset + DEVICE_PAGE_SIZE >= deviceTotal;
+}
+
+function escapeDeviceHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[character]);
+}
+
+function formatDeviceDate(value) {
+  if (!value) return "Not available";
+
+  const date = new Date(value);
+
+  return Number.isNaN(date.getTime())
+    ? "Not available"
+    : date.toLocaleString();
+}
+
+window.revokeDevice = async function(deviceId) {
+  const confirmed = confirm(
+    "Are you sure you want to revoke this device? The device will lose access, but its access code will remain active."
+  );
+
+  if (!confirmed) return;
+
+  const message = document.getElementById("deviceMessage");
+
+  try {
+    await callAdminApi("revoke_device", {
+      device_id: deviceId
+    });
+
+    message.textContent = "Device revoked successfully.";
+    await loadDevices();
+
+  } catch (error) {
+    message.textContent = error.message;
+  }
+};
+
+document.getElementById("refreshDevicesButton")
+  .addEventListener("click", () => loadDevices());
+
+document.getElementById("deviceSearch")
+  .addEventListener("input", () => renderDevices());
+
+document.getElementById("deviceStatus")
+  .addEventListener("change", () => renderDevices());
+
+document.getElementById("previousDevicesButton")
+  .addEventListener("click", () => {
+    deviceOffset = Math.max(0, deviceOffset - DEVICE_PAGE_SIZE);
+    loadDevices();
+  });
+
+document.getElementById("nextDevicesButton")
+  .addEventListener("click", () => {
+    if (deviceOffset + DEVICE_PAGE_SIZE < deviceTotal) {
+      deviceOffset += DEVICE_PAGE_SIZE;
+      loadDevices();
+    }
+  });
+ 
     restoreSession();
   </script>
 
@@ -1295,6 +1485,57 @@ document.getElementById("nextAccessCodesButton")
 </section>
 <!-- END ACCESS CODE MANAGEMENT -->
 
+<!-- DEVICE MANAGEMENT -->
+<section class="customer-section" id="deviceManagement">
+  <h3>Device Management</h3>
+  <p class="subtitle">
+    View registered eBook devices, monitor device activity,
+    and revoke device access when necessary.
+  </p>
+
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h4>Total Registered Devices</h4>
+      <p id="totalRegisteredDevices">0</p>
+    </div>
+    <div class="stat-card">
+      <h4>Active Devices</h4>
+      <p id="activeRegisteredDevices">0</p>
+    </div>
+    <div class="stat-card">
+      <h4>Revoked Devices</h4>
+      <p id="revokedRegisteredDevices">0</p>
+    </div>
+  </div>
+
+  <div class="search-container">
+    <input type="text" id="deviceSearch"
+      placeholder="Search device, access code, or customer...">
+
+    <select id="deviceStatus">
+      <option value="all">All Devices</option>
+      <option value="active">Active Devices</option>
+      <option value="revoked">Revoked Devices</option>
+    </select>
+
+    <button type="button" id="refreshDevicesButton">
+      Refresh Devices
+    </button>
+  </div>
+
+  <div id="deviceMessage"></div>
+  <div id="deviceList">
+    <p>Device records will appear here.</p>
+  </div>
+
+  <div class="pagination-controls">
+    <button type="button" id="previousDevicesButton">Previous</button>
+    <span id="devicePageInfo">Page 1</span>
+    <button type="button" id="nextDevicesButton">Next</button>
+  </div>
+</section>
+<!-- END DEVICE MANAGEMENT -->
+  
   <button id="refreshButton" type="button">
     
     REFRESH STATISTICS
