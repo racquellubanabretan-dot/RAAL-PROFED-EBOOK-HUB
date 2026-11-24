@@ -403,6 +403,104 @@ allocationSection.appendChild(productSelect);
 allocationSection.appendChild(assignButton);
 card.appendChild(allocationSection);
 
+// VIEW PREVIOUSLY ASSIGNED ACCESS CODES
+const viewCodesButton = document.createElement("button");
+viewCodesButton.type = "button";
+viewCodesButton.textContent = "VIEW ASSIGNED ACCESS CODES";
+viewCodesButton.style.width = "100%";
+viewCodesButton.style.marginTop = "10px";
+
+const codesContainer = document.createElement("div");
+codesContainer.style.marginTop = "12px";
+
+viewCodesButton.addEventListener("click", async () => {
+    if (codesContainer.dataset.loaded === "true") {
+        codesContainer.replaceChildren();
+        codesContainer.dataset.loaded = "false";
+        viewCodesButton.textContent = "VIEW ASSIGNED ACCESS CODES";
+        return;
+    }
+
+    viewCodesButton.disabled = true;
+    viewCodesButton.textContent = "LOADING ACCESS CODES...";
+
+    try {
+        const details = await callAdminApi("customer_details", {
+            customer_id: customer.id
+        });
+
+        codesContainer.replaceChildren();
+
+        const codes = details.access_codes || [];
+
+        if (!codes.length) {
+            codesContainer.appendChild(
+                createCustomerText("p", "No access codes assigned.")
+            );
+        }
+
+        codes.forEach((code) => {
+            const codeCard = document.createElement("div");
+            codeCard.style.border = "1px solid #ddd";
+            codeCard.style.padding = "12px";
+            codeCard.style.marginTop = "8px";
+            codeCard.style.borderRadius = "6px";
+
+            const productName =
+                code.product?.product_name || "Unknown eBook";
+
+            codeCard.appendChild(
+                createCustomerText("p", "Product: " + productName)
+            );
+
+            const codeText = createCustomerText(
+                "p",
+                "Access Code: " + code.code
+            );
+
+            codeText.style.fontWeight = "bold";
+            codeCard.appendChild(codeText);
+
+            codeCard.appendChild(
+                createCustomerText(
+                    "p",
+                    "Status: " + (code.is_active ? "Active" : "Inactive")
+                )
+            );
+
+            const copyButton = document.createElement("button");
+            copyButton.type = "button";
+            copyButton.textContent = "COPY ACCESS CODE";
+
+            copyButton.addEventListener("click", async () => {
+                try {
+                    await navigator.clipboard.writeText(code.code);
+                    copyButton.textContent = "COPIED!";
+                } catch (error) {
+                    showCustomerMessage(
+                        "Unable to copy the code. Please copy it manually.",
+                        "error"
+                    );
+                }
+            });
+
+            codeCard.appendChild(copyButton);
+            codesContainer.appendChild(codeCard);
+        });
+
+        codesContainer.dataset.loaded = "true";
+        viewCodesButton.textContent = "HIDE ASSIGNED ACCESS CODES";
+
+    } catch (error) {
+        showCustomerMessage(error.message, "error");
+    } finally {
+        viewCodesButton.disabled = false;
+    }
+});
+
+card.appendChild(viewCodesButton);
+card.appendChild(codesContainer);
+
       customerList.appendChild(card);
     });
 
