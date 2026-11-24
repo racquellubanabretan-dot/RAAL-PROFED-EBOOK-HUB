@@ -697,15 +697,19 @@ document.getElementById("nextAccessCodesButton")
 // DEVICE MANAGEMENT
 // ========================================
 
+
 const DEVICE_PAGE_SIZE = 25;
 let deviceOffset = 0;
 let deviceTotal = 0;
 let allDeviceRecords = [];
+let deviceSearchTimer = null;
+
 let deviceStatistics = {
   total: 0,
   active: 0,
   revoked: 0
 };
+
 
 async function loadDevices() {
   const list = document.getElementById("deviceList");
@@ -863,11 +867,17 @@ window.revokeDevice = async function(deviceId) {
 document.getElementById("refreshDevicesButton")
   .addEventListener("click", () => loadDevices());
 
+
 document.getElementById("deviceSearch")
   .addEventListener("input", () => {
-    deviceOffset = 0;
-    loadDevices();
+    clearTimeout(deviceSearchTimer);
+
+    deviceSearchTimer = setTimeout(() => {
+      deviceOffset = 0;
+      loadDevices();
+    }, 350);
   });
+
 
 document.getElementById("deviceStatus")
   .addEventListener("change", () => {
